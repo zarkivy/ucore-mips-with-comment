@@ -1,5 +1,7 @@
 # ucore-mips-with-comment
 
+- 编译生成FPGA镜像: `make`
+- 编译生成模拟镜像: `make ON_FPGA=n`
 - 使用qemu启动镜像: `qemu-system-mipsel -M mipssim -m 32M -kernel obj/ucore-kernel-initrd`
 - 使用qemu启动loader:  `qemu-system-mipsel -M mipssim -m 32M -serial stdio -bios boot/loader.bin`
 - make所需的gcc: `mipsel-linux-gnu-gcc`
