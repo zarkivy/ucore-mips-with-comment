@@ -12,9 +12,12 @@
 /* load a 32bit word from Flash, 
  * off is byte-addressed */
 
-/*I类型：具体操作由op指定，指令的低16位是立即数，
-运算时要将其扩展至32位，然后作为其中一个源操作数参与运算
-但目前尚不清楚该函数的具体功效*/
+/* LOAD_WORD_I宏定义，执行下面所有指令
+ * 这部分应该对应的是ucore中的bootmain.c中的readseg
+ * 但这个到底实现什么功能还有些不清楚  --> 个人感觉是从elfhdr中取一个字节的内容
+ * ssl rd,rt,sa  --> (rd) = (rt) << sa
+ * lw  rt , offset(base)  --> (rt) = MEM((base)+offset) 取个字节
+ */
 #define LOAD_WORD_I(dst, off) \
   la $t7, ((off) << 1); \
   addu $t7, $s0, $t7; \
@@ -23,9 +26,9 @@
   sll $t7, $t7, 16; \
   or dst, dst, $t7
 
-/*R类型：具体操作由op、func结合指定，
-rs和rt是源寄存器的编号，rd是目的寄存器的编号
-这里也是对该函数具体功效不清楚*/
+/* LOAD_WORD_R宏定义，执行下面所有指令
+ * 个人感觉是从proghdr中取一个字节的内容
+*/
 #define LOAD_WORD_R(dst, off, base) \
   addiu $t7, base, off;\
   sll  $t7, $t7, 1; \ 
@@ -49,32 +52,39 @@ __start:
   nop
 
 load_elf:
+  #感觉第一部分去掉也没关系
   #dirty hack 这里为什么要 -8？
   la $t0, (FLASH_START+FLASH_SIZE - 8)
-  # 这个0x00FF有啥含义？
+  # byte类型转换为int类型，希望保证低8比特数据一致，前24比特为0时要与上0xff
   la $t1, 0x00FF
   #将源寄存器中的值存入指定的地址 MEM($t0+0)=$t1
   sw $t1, 0($t0)
 
   #addr of elfheader, s0
   la $s0, FLASH_START
-  #e_magic -->具体是指？
+  #e_magic -->魔数,位于elf文件头，用于检测elf是否有效
   LOAD_WORD_I($t1, 0)
   la $t0, ELF_MAGIC
-  # branch to 1 if  $t0 = $t1
+  # branch to 1 if  $t0 = $t1 此时代表elf是有效的
   beq $t0, $t1, 1f
   # 如果上一步没有完成则陷入死循环
   nop
   b bad
   nop
 1:
-  #e_phoff -->具体是指？
+  # 这部分对应源ucore中bootmain.c中bootmain函数 load each program segment 
+
+  #e_phoff -->程序头表的文件偏移（以字节为单位）。
+  #如果文件没有程序头表，则此成员值为零。
+  # 28 -> 第七个字节，也就是在对应偏移上
   LOAD_WORD_I($s1, 28)
-  #e_phnum -->具体是指？
+  #e_phnum -->程序头表中的项数。
+  #如果文件没有程序头表，则 e_phnum 值为零
   LOAD_WORD_I($s2, 44)
   andi $s2, $s2, 0xFFFF
 
-  #e_entry 这里应该是kenerl入口地址
+  #e_entry 系统首先将控制权转移到的虚拟地址，从而启动进程。
+  #如果文件没有关联的入口点，则此成员值为零。
   LOAD_WORD_I($s3, 24)
 
 next_sec:
