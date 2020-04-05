@@ -70,8 +70,7 @@ load_elf:
   nop
 
 
-1:  # 这部分对应源ucore中bootmain.c中bootmain函数 load each program segment 
-    # 将kernel的elf文件的关键控制信息填入各寄存器，为载入kernel并转移控制权做准备
+1:  # 将kernel的elf文件的关键控制信息填入各寄存器，为载入kernel的elf文件并转移控制权做准备
 
   # e_phoff (elf program header offset) --> elf头表的偏移
   LOAD_WORD_I($s1, 28)
@@ -84,47 +83,64 @@ load_elf:
   LOAD_WORD_I($s3, 24)
 
 
-next_sec:
+# 以下部分为将elf文件读入虚拟地址空间
+# 每次子循环（copy_sec）读入一个section中的4字节，每次大循环（next_sec、3）读入完成一个section
+next_sec:   
   # s1, addr proghdr
-  # s4, p_va
+
+  # 以下三项为初始化相应寄存器的值
+  # s4, p_va 当前写入的section的虚拟内存地址
   LOAD_WORD_R($s4, 8, $s1)
-  #s5, p_filesz
+
+  # s5, p_filesz 剩余待写入的section大小
   LOAD_WORD_R($s5, 16, $s1)
-  #s6, p_offset
+
+  # s6, p_offset 当前已写入部分的偏移
   LOAD_WORD_R($s6, 4, $s1)
 
+  
   beq  $s4, $zero, 3f
   nop
+  # 剩余待写入的section大小为0，跳转至3，读取下一section
   beq  $s5, $zero, 3f
   nop
 
-#copy from file_base+p_offset to p_va
+# copy from file_base+p_offset to p_va
+# copy_sec执行一次写入一个字长的elf文件数据至内存中
 copy_sec:
   LOAD_WORD_R($t0, 0, $s6)
   sw $t0, 0($s4)
-  addiu $s6, $s6, 4
-  addiu $s4, $s4, 4
+  # 已读取的文件偏移+4
+  addiu $s6, $s6, 4 
+  # 当前写入虚拟内存指针+4
+  addiu $s4, $s4, 4 
+  # 剩余待写入的section大小-4
   addiu $s5, $s5, -4
+  # s5 > 0, 还有剩余的文件数据未读入完毕，循环读取
   bgtz  $s5, copy_sec
   nop
 
 3:
-  # 这里32和-1的操作？
+  # $s1 += 32 指向下一个表项
   addiu $s1, $s1, 32
+  # 待读取section数量-1 
   addiu $s2, $s2, -1
-  # $s2 > 0 则跳转
+  # $s2 > 0 ，还有未读取的section，跳转值next_sec继续读取
   bgtz  $s2, next_sec
   nop
+# 以上部分为将elf文件读入虚拟地址空间
 
 done:
-  #jump to kernel
+  # jump to kernel
+  # 循环结束表示读取完毕，跳转到ucore kernel
   jr $s3
   nop
-  # 这里b跳转到"."不清楚什么意思
+  # b . == b done (不太确定)
   b .
   nop
 
 bad:
+  # 出错后进入的死循环
   b bad 
   nop
 
