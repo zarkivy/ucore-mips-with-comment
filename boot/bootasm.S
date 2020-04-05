@@ -70,8 +70,8 @@ load_elf:
   nop
 
 
-1:  # 将kernel的elf文件的关键控制信息填入各寄存器，为载入kernel的elf文件并转移控制权做准备
-
+# 将kernel的elf文件的关键控制信息填入各寄存器，为载入kernel的elf文件并转移控制权做准备
+1:  
   # e_phoff (elf program header offset) --> elf头表的偏移
   LOAD_WORD_I($s1, 28)
 
