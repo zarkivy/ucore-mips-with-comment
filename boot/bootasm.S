@@ -13,9 +13,8 @@
  * off is byte-addressed */
 
 /* LOAD_WORD_I宏定义，执行下面所有指令
- * 这部分应该对应的是ucore中的bootmain.c中的readseg
- * 但这个到底实现什么功能还有些不清楚  --> 个人感觉是从elfhdr中取一个字节的内容
- * ssl rd,rt,sa  --> (rd) = (rt) << sa
+ * 自FLASH_START的偏移off处读取一个字长存放于dst
+ * sll rd,rt,sa  --> (rd) = (rt) << sa
  * lw  rt , offset(base)  --> (rt) = MEM((base)+offset) 取个字节
  */
 #define LOAD_WORD_I(dst, off) \
