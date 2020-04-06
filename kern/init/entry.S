@@ -1,4 +1,4 @@
-#include <asm/mipsregs.h>
+# include <asm/mipsregs.h>
 
 .global kernel_entry
 .extern kern_init
@@ -11,7 +11,8 @@
 
 .section .startup
 
-#define KSTACKSIZE (4096*2)
+// 核心栈大小8KB
+# define KSTACKSIZE (4096*2)
 
 kernel_entry:
   b reset
@@ -37,7 +38,7 @@ reset:
   la $sp, bootstacktop
 #setup ram exception
   la   $t0, __exception_vector
-#TODO
+#TODO 
   mtc0 $t0, $15, 1 
 
   mfc0 $t0, CP0_STATUS
