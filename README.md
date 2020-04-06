@@ -10,6 +10,8 @@
 
 
 ```sh
+qemu-system-mipsel -M mipssim -m 32M -monitor stdio -kernel obj/ucore-kernel-initrd
+
 qemu-system-mipsel \ # qemu程序
    -M mipssim \ # mips simulation
    -m 32M \ # 32MB 内存

@@ -1,4 +1,3 @@
-
 #include <asm/mipsregs.h>
 
 .global kernel_entry
