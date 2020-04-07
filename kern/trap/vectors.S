@@ -1,10 +1,11 @@
 /* we allocate exception vectors in ram statically
    so we can trap exceptions as soon as possible
  */
+
 #include <asm/regdef.h>
 #include <asm/mipsregs.h>
 
- #define RVECENT(f,n) \
+#define RVECENT(f,n) \
   b f; nop
 #define XVECENT(f, n) \
   b f; nop
@@ -18,6 +19,8 @@
 .extern ramExcHandle_general
 
 .set noreorder
+
+// 异常向量表，静态分配于内存的0xbfc00000~0xbfc00400处
 .global __exception_vector
 __exception_vector:
   RVECENT(ramExcHandle_tlbmiss,0) 

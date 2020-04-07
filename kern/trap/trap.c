@@ -25,11 +25,11 @@ static void print_ticks() {
 }
 
 
-
+// 存放陷阱名的数组
 static const char *
 trapname(int trapno) {
     static const char * const excnames[] = {
-        "Interrupt",
+        "Interrupt",                        // 中断
         "TLB Modify",
         "TLB miss on load",
         "TLB miss on store",
@@ -37,7 +37,7 @@ trapname(int trapno) {
         "Address error on store",
         "Bus error on instruction fetch",
         "Bus error on data load or store",
-        "Syscall",
+        "Syscall",                          // 系统调用
         "Breakpoint",
         "Reserved (illegal) instruction",
         "Coprocessor unusable",
@@ -85,6 +85,8 @@ print_trapframe(struct trapframe *tf) {
     kputchar('\n');
 }
 
+
+// 中断处理程序
 static void interrupt_handler(struct trapframe *tf)
 {
   extern clock_int_handler(void*);
@@ -122,6 +124,8 @@ static inline int get_error_code(int write, pte_t *pte)
   return r;
 }
 
+
+// 页异常处理程序
 static int
 pgfault_handler(struct trapframe *tf, uint32_t addr, uint32_t error_code) {
 #if 0

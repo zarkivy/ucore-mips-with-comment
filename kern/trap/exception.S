@@ -1,6 +1,9 @@
 /*
  * Entry points for exceptions
  */
+
+// 异常处理程序的入口
+
 #include <asm/regdef.h>
 #include <asm/mipsregs.h> 
 #include <memlayout.h>
