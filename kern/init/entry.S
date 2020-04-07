@@ -1,4 +1,4 @@
-# include <asm/mipsregs.h>
+#include <asm/mipsregs.h>
 
 .global kernel_entry
 .extern kern_init
@@ -11,9 +11,10 @@
 
 .section .startup
 
-// 核心栈大小8KB
+/* 核心栈大小8KB */
 # define KSTACKSIZE (4096*2)
 
+/* kernel elf 可执行文件的入口点 */
 kernel_entry:
   b reset
   nop
@@ -59,9 +60,11 @@ reset:
 
   addiu $sp, $sp, -16
   la $t9, kern_init 
+/* 由此跳转到 /kern/init.c -> kern_init() */
   jal $t9
   nop
-#never here
+
+# never here
   bgez $zero, .
   nop
 
@@ -77,6 +80,7 @@ romExcHandle_300:
   nop
 
 
+/* 初始化.data section，8KB bootstack + 32B bootstacktop */
 .section .data
     .global bootstack
 bootstack:
