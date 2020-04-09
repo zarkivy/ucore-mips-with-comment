@@ -3,8 +3,10 @@
 .global kernel_entry
 .extern kern_init
 
+/* bss段起始地址 */
 .extern edata
 .extern end
+/* bss段结束地址 */
 
 .set noreorder
 .set noat
@@ -47,6 +49,7 @@ reset:
   and  $t0, $t0, $t1
   mtc0 $t0, CP0_STATUS
 
+/* 开始清零bss */
 #zero bss
   la $t0, edata
   la $t1, end
@@ -57,6 +60,7 @@ reset:
   slt $t3, $t0, $t1
   bgtz $t3, 2b
   nop 
+/* 清零bss 完成 */
 
   addiu $sp, $sp, -16
   la $t9, kern_init 
