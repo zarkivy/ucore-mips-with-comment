@@ -6,6 +6,7 @@
 #define ELF_MAGIC   0x464C457FU         // "\x7FELF" in little endian
 
 /* file header */
+// elf 文件头的结构定义
 struct __elfhdr {
     uint32_t e_magic;     // must equal ELF_MAGIC
     uint8_t e_elf[12];
@@ -24,6 +25,7 @@ struct __elfhdr {
     unsigned short e_shstrndx;  // section number that contains section name strings
 };
 
+// 32位下 elf 文件头的结构定义
 struct elfhdr32 {
     uint32_t e_magic;     // must equal ELF_MAGIC
     uint8_t e_elf[12];
@@ -42,6 +44,7 @@ struct elfhdr32 {
     uint32_t e_shstrndx;  // section number that contains section name strings
 };
 
+// 将 base 处的 elf 文件头数据载入至 hdr 指向的 elfhdr32 结构体中
 static inline void _load_elfhdr(unsigned char* base, struct elfhdr32 *hdr)
 {
   struct __elfhdr *eh = (struct __elfhdr*)base;
@@ -70,6 +73,7 @@ static inline void _load_elfhdr(unsigned char* base, struct elfhdr32 *hdr)
 }
 
 /* program section header */
+// 程序的节头表
 struct proghdr {
     uint32_t p_type;   // loadable code or data, dynamic linking info,etc.
     uint32_t p_offset; // file offset of segment
