@@ -59,7 +59,7 @@ buddy_init_memmap(struct Page *base, size_t n) {
         assert(PageReserved(p));
         p->flags = p->property = 0;
         p->zone_num = zone_num;
-        set_page_ref(p, 0);
+        set_page_ref(p, 0);  // 页面引用设置为0
     }
     p = zones[zone_num ++].mem_base = base;
     size_t order = MAX_ORDER, order_size = (1 << order);
@@ -90,6 +90,7 @@ getorder(size_t n) {
 
 //buddy_alloc_pages_sub - the actual allocation implimentation, return a page whose size >=n,
 //                      - the remaining free parts insert to other free list
+// 实际的分配空间的算法啊，返回页并将剩余空间插入空闲空间列表
 static inline struct Page *
 buddy_alloc_pages_sub(size_t order) {
     assert(order <= MAX_ORDER);
@@ -97,14 +98,14 @@ buddy_alloc_pages_sub(size_t order) {
     for (cur_order = order; cur_order <= MAX_ORDER; cur_order ++) {
         if (!list_empty(&free_list(cur_order))) {
             list_entry_t *le = list_next(&free_list(cur_order));
-            struct Page *page = le2page(le, page_link);
+            struct Page *page = le2page(le, page_link);  // Page结构中包含le，因此可以通过le的位置减去偏移得到Page结构的起始位置
             nr_free(cur_order) --;
             list_del(le);
             size_t size = 1 << cur_order;
             while (cur_order > order) {
                 cur_order --;
                 size >>= 1;
-                struct Page *buddy = page + size;
+                struct Page *buddy = page + size;  // 下一个Page
                 buddy->property = cur_order;
                 SetPageProperty(buddy);
                 nr_free(cur_order) ++;
@@ -168,7 +169,7 @@ buddy_free_pages_sub(struct Page *base, size_t order) {
     int zone_num = base->zone_num;
     while (order < MAX_ORDER) {
         buddy_idx = page_idx ^ (1 << order);
-        struct Page *buddy = idx2page(zone_num, buddy_idx);
+        struct Page *buddy = idx2page(zone_num, buddy_idx);  // 通过偏移实现定位上层结构
         if (!page_is_buddy(buddy, order, zone_num)) {
             break;
         }

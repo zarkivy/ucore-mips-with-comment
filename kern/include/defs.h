@@ -82,7 +82,7 @@ uint32_t __n = (1<<(uint32_t)(n));                           \
  * @member: the name of the member within the struct
  * */
 #define to_struct(ptr, type, member)                               \
-    ((type *)((char *)(ptr) - offsetof(type, member)))
+    ((type *)((char *)(ptr) - offsetof(type, member)))  // 通过偏移计算出父struct的地址
 
 #endif /* !__LIBS_DEFS_H__ */
 

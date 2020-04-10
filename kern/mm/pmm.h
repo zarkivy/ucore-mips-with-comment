@@ -24,7 +24,7 @@ struct pmm_manager {
     void (*free_pages)(struct Page *base, size_t n);  // free >=n pages with "base" addr of Page descriptor structures(memlayout.h)
     size_t (*nr_free_pages)(void);                    // return the number of free pages 
     void (*check)(void);                              // check the correctness of XXX_pmm_manager 
-};
+};  //实际函数的实现在buddy_pmm.c中
 
 extern const struct pmm_manager *pmm_manager;
 extern pde_t *boot_pgdir;

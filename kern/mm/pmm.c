@@ -93,6 +93,7 @@ nr_free_pages(void) {
 }
 
 /* pmm_init - initialize the physical memory management */
+// 初始化物理内存管理
 static void
 page_init(void) {
   uint32_t maxpa;
