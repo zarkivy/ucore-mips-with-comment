@@ -6,7 +6,8 @@
 #include <trap.h>
 #include <memlayout.h>
 
-
+// 枚举，进程状态，
+// 比x86版多了个PROC_FORCE_32——而且没有代码用到它，我觉得删了都行
 // process's state in his life cycle
 enum proc_state {
     PROC_UNINIT = 0,  // uninitialized
@@ -16,6 +17,7 @@ enum proc_state {
     PROC_FORCE_32 = 0xFFFFFFFF
 };
 
+// 上下文结构体，本质是用来保存寄存器值的
 // Saved registers for kernel context switches.
 // Don't need to save all the %fs etc. segment registers,
 // because they are constant across kernel contexts.
@@ -44,6 +46,7 @@ struct context {
 
 extern list_entry_t proc_list;
 
+// 表示进程的结构体
 struct proc_struct {
     enum proc_state state;                      // Process state
     int pid;                                    // Process ID
@@ -78,6 +81,7 @@ struct proc_struct {
 #define WT_TIMER                    (0x00000002 | WT_INTERRUPTED)  // wait timer
 #define WT_KBD                      (0x00000004 | WT_INTERRUPTED)  // wait the input of keyboard
 
+// 剩下就是proc.c里函数的声明了
 #define le2proc(le, member)         \
   to_struct((le), struct proc_struct, member)
 
