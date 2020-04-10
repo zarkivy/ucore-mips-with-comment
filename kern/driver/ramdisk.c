@@ -41,6 +41,7 @@ bool check_initrd(){
 }
 
 
+//RAM 读取
 static int ramdisk_read(struct ide_device* dev, size_t secno, void *dst, size_t nsecs)
 {
   nsecs = MIN(nsecs, dev->size-secno);
@@ -50,6 +51,7 @@ static int ramdisk_read(struct ide_device* dev, size_t secno, void *dst, size_t 
   return 0;
 }
 
+//RAM 写入
 static int ramdisk_write(struct ide_device* dev, size_t secno,const  void *src, size_t nsecs)
 {
   //kprintf("%08x(%d) %08x(%d)\n", dev->size, dev->size, secno, secno);
@@ -60,12 +62,12 @@ static int ramdisk_write(struct ide_device* dev, size_t secno,const  void *src, 
   return 0;
 }
 
+//初始化RAM
 static void ramdisk_init(struct ide_device* dev){
   kprintf("ramdisk_init(): initrd found, magic: 0x%08x, 0x%08x secs\n", *(uint32_t*)(dev->iobase), dev->size);
-
 }
 
-
+//初始化结构体ide_device
 void ramdisk_init_struct(struct ide_device* dev)
 {
   memset(dev, 0, sizeof(struct ide_device));

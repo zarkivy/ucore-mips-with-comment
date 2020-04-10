@@ -16,6 +16,7 @@ static void reload_timer()
   write_c0_compare(counter);
 }
 
+//时钟中断处理函数
 int clock_int_handler(void * data)
 {
   ticks++;
@@ -26,6 +27,7 @@ int clock_int_handler(void * data)
   return 0;
 }
 
+//初始化Clock计数器，开启TIMER0_IRQ的中断
 void
 clock_init(void) {
   reload_timer(); 

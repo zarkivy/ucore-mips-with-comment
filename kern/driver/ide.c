@@ -8,6 +8,10 @@
 #include <ramdisk.h>
 #include <memlayout.h>
 
+/*
+使用静态存储区代替交换区
+*/
+
 #define VALID_IDE(ideno)        (((ideno) >= 0) && ((ideno) < MAX_IDE) && (ide_devices[ideno].valid))
 
 #define MAX_IDE 4
@@ -43,6 +47,7 @@ ide_device_valid(unsigned int ideno) {
     return VALID_IDE(ideno);
 }
 
+//返回静态存储区的大小
 size_t
 ide_device_size(unsigned int ideno) {
     if (ide_device_valid(ideno)) {
@@ -51,6 +56,7 @@ ide_device_size(unsigned int ideno) {
     return 0;
 }
 
+//读取
 int
 ide_read_secs(unsigned int ideno, uint32_t secno, void *dst, size_t nsecs) {
   if(CHECK_CALL(ideno, read_secs))
@@ -58,6 +64,7 @@ ide_read_secs(unsigned int ideno, uint32_t secno, void *dst, size_t nsecs) {
   return 0;
 }
 
+//写入
 int
 ide_write_secs(unsigned int ideno, uint32_t secno, const void *src, size_t nsecs) {
   if(CHECK_CALL(ideno, write_secs))

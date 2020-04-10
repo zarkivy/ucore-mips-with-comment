@@ -37,6 +37,7 @@ delay(void) {
 
 static bool serial_exists = 0;
 
+//串口初始化
 static void
 serial_init(void) {
     volatile unsigned char *uart = (unsigned char*)COM1;
@@ -58,10 +59,11 @@ serial_init(void) {
     // Enable rcv interrupts
     outb(COM1 + COM_IER, COM_IER_RDI);
 
+    //开启串口COM1中断
     pic_enable(COM1_IRQ);
 }
 
-
+//我的理解是向指定串口COM1发送信息，COM_TX代表发送
 static void
 serial_putc_sub(int c) {
     while (!(inb(COM1 + COM_LSR) & COM_LSR_TXRDY)) {
@@ -91,10 +93,11 @@ serial_proc_data(void) {
     return c;
 }
 
-
+//串口处理函数
 void serial_int_handler(void *opaque)
 {
   unsigned char id = inb(COM1+COM_IIR);
+  //如果此时有东西发送，则直接返回
   if(id & 0x01)
     return ;
   //int c = serial_proc_data();
