@@ -21,6 +21,7 @@ void setup_exception_vector()
       &__exception_vector_end - &__exception_vector);
 }
 
+// kernel elf 的c代码的入口主函数，完成了一系列初始化工作并启动了ucore核心
 void __noreturn
 kern_init(void) {
     //setup_exception_vector();

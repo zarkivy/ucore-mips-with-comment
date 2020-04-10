@@ -11,7 +11,7 @@
 
 extern volatile int ticks;
 
-// 以下为系统调用函数的实现
+// 以下为系统调用入口函数的实现
 
 static int
 sys_exit(uint32_t arg[]) {
@@ -158,7 +158,7 @@ sys_dup(uint32_t arg[]) {
     int fd2 = (int)arg[1];
     return sysfile_dup(fd1, fd2);
 }
-// 以上为系统调用函数的实现
+// 以上为系统调用入口函数的实现
 
 // 系统调用号与对应函数的map
 static int (*syscalls[])(uint32_t arg[]) = {

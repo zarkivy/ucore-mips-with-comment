@@ -1,9 +1,10 @@
 #ifndef __LIBS_UNISTD_H__
 #define __LIBS_UNISTD_H__
 
+// 系统调用中断号：0x80
 #define SYSCALL_BASE            0x80
 
-/* syscall number */
+/* syscall number 系统调用号*/
 #define SYS_exit            1
 #define SYS_fork            2
 #define SYS_wait            3

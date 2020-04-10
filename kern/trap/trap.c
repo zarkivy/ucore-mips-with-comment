@@ -25,7 +25,7 @@ static void print_ticks() {
 }
 
 
-// 存放陷阱名的数组
+// 存放软中断名的数组
 static const char *
 trapname(int trapno) {
     static const char * const excnames[] = {
@@ -49,6 +49,7 @@ trapname(int trapno) {
       return "Unknown";
 }
 
+// 判断是否为内核中断
 bool
 trap_in_kernel(struct trapframe *tf) {
   return !(tf->tf_status & KSU_USER);
@@ -67,16 +68,17 @@ void print_regs(struct pushregs *regs)
   }
 }
 
+// 打印中断（帧）信息
 void
 print_trapframe(struct trapframe *tf) {
-    PRINT_HEX("trapframe at ", tf);
-    print_regs(&tf->tf_regs);
-    PRINT_HEX(" $ra\t: ", tf->tf_ra);
-    PRINT_HEX(" BadVA\t: ", tf->tf_vaddr);
-    PRINT_HEX(" Status\t: ", tf->tf_status);
-    PRINT_HEX(" Cause\t: ", tf->tf_cause);
-    PRINT_HEX(" EPC\t: ", tf->tf_epc);
-    if (!trap_in_kernel(tf)) {
+    PRINT_HEX("trapframe at ", tf);         // 中断帧
+    print_regs(&tf->tf_regs);               // 中断帧中保存的寄存器
+    PRINT_HEX(" $ra\t: ", tf->tf_ra);       // 中断返回地址 
+    PRINT_HEX(" BadVA\t: ", tf->tf_vaddr);  // 
+    PRINT_HEX(" Status\t: ", tf->tf_status);// 
+    PRINT_HEX(" Cause\t: ", tf->tf_cause);  //
+    PRINT_HEX(" EPC\t: ", tf->tf_epc);      //
+    if (!trap_in_kernel(tf)) {              // 中断位置（用户态 or 内核态）
       kprintf("Trap in usermode: ");
     }else{
       kprintf("Trap in kernel: ");
@@ -95,10 +97,10 @@ static void interrupt_handler(struct trapframe *tf)
   for(i=0;i<8;i++){
     if(tf->tf_cause & (1<<(CAUSEB_IP+i))){
       switch(i){
-        case TIMER0_IRQ:
+        case TIMER0_IRQ:                // 时钟中断处理（进程调度等）
           clock_int_handler(NULL);
           break;
-        case COM1_IRQ:
+        case COM1_IRQ:                  // 串口中断处理（键盘输入、外设请求等）
           serial_int_handler(NULL);
           break;
         default:

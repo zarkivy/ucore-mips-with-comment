@@ -6,6 +6,7 @@ struct pushregs {
  uint32_t reg_r[30];
 };
 
+// 映射mipsel的寄存器名与寄存器号
 #define MIPS_REG_START  (0)
 #define MIPS_REG_AT    (MIPS_REG_START+0)
 #define MIPS_REG_V0    (MIPS_REG_START+1)
@@ -46,6 +47,7 @@ struct pushregs {
  * This must agree with the code in exception.S.
  */
 
+// 中断帧的定义
 struct trapframe {
 	uint32_t tf_vaddr;	/* coprocessor 0 vaddr register */
 	uint32_t tf_status;	/* coprocessor 0 status register */
