@@ -72,6 +72,7 @@ list_entry_t proc_list;
 // has list for process set based on pid
 static list_entry_t hash_list[HASH_LIST_SIZE];
 
+// 三个特殊的指针，一个指向空闲进程，一个指向最开始的init进程，最后一个指向当前进程（永远指向当前进程，就相当于进程的this指针）
 // idle proc
 struct proc_struct *idleproc = NULL;
 // init proc
@@ -81,10 +82,17 @@ struct proc_struct *current = NULL;
 
 static int nr_process = 0;
 
+// ↓ 函数声明，函数体是汇编，写在entry.S里（且entry.S只有这一个函数）
 void kernel_thread_entry(void);
+// 同上，本体是汇编的函数声明，在kern/trap/exception.S里
+// 大致内容是把栈顶寄存器向栈底移，然后哗啦哗啦load到各个寄存器
+// 是为了把当前栈的内容读进trapframe，这种做法好像在哪也见过
+// 另外，x86版在trapEntry.S里——也有可能是这份代码太老了
 void forkrets(struct trapframe *tf);
+// 同上，函数体在switch.S。大意是保存from进程上下文的寄存器，恢复to的寄存器
 void switch_to(struct context *from, struct context *to);
 
+// 创建进程结构体，并初始化（大部分赋值位NULL/0，列表则用专门的初始化函数初始化，最特殊的是cr3（MIPS也有cr3？）和pid）
 // alloc_proc - alloc a proc_struct and init all fields of proc_struct
 static struct proc_struct *
 alloc_proc(void) {
@@ -158,6 +166,7 @@ remove_links(struct proc_struct *proc) {
     nr_process --;
 }
 
+// 给进程分配唯一pid，我记得lab几有问题问过算法……
 // get_pid - alloc a unique pid for process
 static int
 get_pid(void) {
@@ -193,6 +202,8 @@ get_pid(void) {
     return last_pid;
 }
 
+// 给某个进程cpu，让它真正跑起来
+// 关中断，切换页目录表（cr3），调用switch_to切换寄存器内容，最后开中断
 // proc_run - make process "proc" running on cpu
 // NOTE: before call switch_to, should load  base addr of "proc"'s new PDT
 void
@@ -221,6 +232,7 @@ forkret(void) {
     forkrets(current->tf);
 }
 
+// ↓ 这两个函数是专门用于操作 hash_list 的插入、删除函数
 // hash_proc - add proc into proc hash_list
 static void
 hash_proc(struct proc_struct *proc) {
@@ -233,6 +245,7 @@ unhash_proc(struct proc_struct *proc) {
     list_del(&(proc->hash_link));
 }
 
+// 遍历hash_list，找到对应pid的进程
 // find_proc - find proc frome proc hash_list according to pid
 struct proc_struct *
 find_proc(int pid) {
@@ -248,6 +261,8 @@ find_proc(int pid) {
     return NULL;
 }
 
+// 使用fn函数创建进程。首先申请一个trapframe结构体，初始化后用do_fork创建进程
+// do_fork会接着调用copy_thread。最后本函数申请的tf变成了proc->tf
 // kernel_thread - create a kernel thread using "fn" function
 // NOTE: the contents of temp trapframe tf will be copied to 
 //       proc->tf in do_fork-->copy_thread function
@@ -268,6 +283,7 @@ kernel_thread(int (*fn)(void *), void *arg, uint32_t clone_flags) {
     return do_fork(clone_flags | CLONE_VM, 0, &tf);
 }
 
+// 用alloc_pages给进程申请一页，当做kernel stack（proc->kstack）
 // setup_kstack - alloc pages with size KSTACKPAGE as process kernel stack
 static int
 setup_kstack(struct proc_struct *proc) {
@@ -279,12 +295,14 @@ setup_kstack(struct proc_struct *proc) {
     return -E_NO_MEM;
 }
 
+// 与↑呼应，释放proc->kstack
 // put_kstack - free the memory space of process kernel stack
 static void
 put_kstack(struct proc_struct *proc) {
     free_pages(kva2page((void *)(proc->kstack)), KSTACKPAGE);
 }
 
+// ↓ 这俩一个申请一个释放pgdir
 // setup_pgdir - alloc one page as PDT
 static int
 setup_pgdir(struct mm_struct *mm) {
@@ -306,6 +324,7 @@ put_pgdir(struct mm_struct *mm) {
     free_page(kva2page(mm->pgdir));
 }
 
+// 复制或共享当前进程与传入进程的内存管理器，在do_fork里有用
 // copy_mm - process "proc" duplicate OR share process "current"'s mm according clone_flags
 //         - if clone_flags & CLONE_VM, then "share" ; else "duplicate"
 static int
@@ -353,6 +372,7 @@ bad_mm:
     return ret;
 }
 
+// 用于do_fork，建立新进程的trapframe和上下文，此处的参数tf是do_fork的参数直接传进来的
 // copy_thread - setup the trapframe on the  process's kernel stack top and
 //             - setup the kernel entry point and stack of process
 static void
@@ -408,6 +428,14 @@ put_fs(struct proc_struct *proc) {
     }
 }
 
+// 真正创建新进程的函数，记得linux也是叫这个名字
+// 使用了前面的很多函数，先用alloc_proc新建proc结构体，然后设置当前进程为新建进程的父亲
+// 依次用setup_kstack、copy_mm、copy_thread设置刚建出来的proc结构体
+// 把设置好的结构体插入hash_list和proc_list以备管理
+// 用wakup_proc改变新建进程状态为RUNNABLE
+// 最后的返回值是新建进程的pid
+// 写在报告里的：
+// 创建一个子进程，先看有没有到进程上限，然后申请`proc_struct`结构体，为子进程建立堆栈、复制内存，把子进程加入追踪进程的表里，最后用 wakeup_proc 把子进程变成 RUNNABLE
 // do_fork - parent process for a new child process
 //    1. call alloc_proc to allocate a proc_struct
 //    2. call setup_kstack to allocate a kernel stack for child process
@@ -415,7 +443,7 @@ put_fs(struct proc_struct *proc) {
 //    4. call copy_thread to setup tf & context in proc_struct
 //    5. insert proc_struct into hash_list && proc_list
 //    6. call wakup_proc to make the new child process RUNNABLE 
-//    7. set the 
+//    7. set ret vaule using child proc's pid
 int
 do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf) {
     int ret = -E_NO_FREE_PROC;
@@ -467,6 +495,9 @@ bad_fork_cleanup_proc:
     goto fork_out;
 }
 
+// 用exit_mmap、 put_pgdir、 mm_destro清空大部分进程的内存空间
+// 把进程状态改为PROC_ZOMBIE，然后唤醒父进程
+// 最后调用调度器切换到其他进程
 // do_exit - called by sys_exit
 //   1. call exit_mmap & put_pgdir & mm_destroy to free the almost all memory space of process
 //   2. set process' state as PROC_ZOMBIE, then call wakeup_proc(parent) to ask parent reclaim itself.
@@ -745,6 +776,7 @@ failed_cleanup:
     return ret;
 }
 
+// 用 load_icode 把 ELF 文件加载到内存里，load_icode 修改了 eip 指针，接下来就会执行 ELF 了。
 // do_execve - call exit_mmap(mm)&pug_pgdir(mm) to reclaim memory space of current process
 //           - call load_icode to setup new memory space accroding binary prog.
 int
@@ -816,6 +848,9 @@ do_yield(void) {
   return 0;
 }
 
+// 根据找僵尸态的进程，若传入 pid 为 0，for 循环随便找一个，不为 0 用 find_pid 直接查看。
+// 找到后从 hash_list 和 proc_list 里删除这个进程，释放空间。
+// 找不到就让当前进程睡眠，调用进程调度程序，之后再找。
 // do_wait - wait one OR any children with PROC_ZOMBIE state, and free memory space of kernel stack
 //         - proc struct of this child.
 // NOTE: only after do_wait function, all resources of the child proces are free.
@@ -880,6 +915,8 @@ found:
     return 0;
 }
 
+// 用find_proc找对应pid的进程，给进程的flag设置为PF_EXITING
+// 但如果进程的wait_state里有WT_INTERRUPTED，会唤醒那个进程
 // do_kill - kill process with pid by set this process's flags with PF_EXITING
 int
 do_kill(int pid) {
@@ -897,6 +934,7 @@ do_kill(int pid) {
     return -E_INVAL;
 }
 
+// 系统调用SYS_exec
 // kernel_execve - do SYS_exec syscall to exec a user program called by user_main kernel_thread
 static int
 kernel_execve(const char *name, const char **argv) {
@@ -921,6 +959,7 @@ kernel_execve(const char *name, const char **argv) {
     return ret;
 }
 
+// 是下面user_main的真正实现，写成宏应该是为了可变参数
 #define __KERNEL_EXECVE(name, path, ...) ({                         \
 const char *argv[] = {path, ##__VA_ARGS__, NULL};       \
 					 kprintf("kernel_execve: pid = %d, name = \"%s\".\n",    \
@@ -936,6 +975,7 @@ const char *argv[] = {path, ##__VA_ARGS__, NULL};       \
 
 #define KERNEL_EXECVE3(x, s, ...)               __KERNEL_EXECVE3(x, s, ##__VA_ARGS__)
 
+// 给下面的init_main创建进程的函数
 // user_main - kernel thread used to exec a user program
 static int
 user_main(void *arg) {
@@ -943,6 +983,7 @@ user_main(void *arg) {
     panic("user_main execve failed.\n");
 }
 
+// 其实是检查你写的程序对不对的——通过新建进程，检查相关属性
 // init_main - the second kernel thread used to create user_main kernel threads
 static int
 init_main(void *arg) {
@@ -975,6 +1016,7 @@ init_main(void *arg) {
     return 0;
 }
 
+// 初始化proc_list、hash_list。创建第一个内核线程idleproc，然后在创建其子进程initproc
 // proc_init - set up the first kernel thread idleproc "idle" by itself and 
 //           - create the second kernel thread init_main
 void
@@ -1017,6 +1059,7 @@ proc_init(void) {
     assert(initproc != NULL && initproc->pid == 1);
 }
 
+// 不停轮询看当前进程需不需要调度，需要就调用调度器（貌似只有idleproc会调用此函数？）
 // cpu_idle - at the end of kern_init, the first kernel thread idleproc will do below works
 void
 cpu_idle(void) {
@@ -1027,6 +1070,8 @@ cpu_idle(void) {
     }
 }
 
+// 创建timer，切换进程状态为PROC_SLEEPING，调用调度器
+// 时间到了，这个进程又要跑了，先删除timer
 // do_sleep - set current process state to sleep and add timer with "time"
 //          - then call scheduler. if process run again, delete timer first.
 int
