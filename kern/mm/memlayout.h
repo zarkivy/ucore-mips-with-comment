@@ -1,9 +1,11 @@
+// 此头文件主要定义了ucore的物理内存结构
+
 #ifndef __KERN_MM_MEMLAYOUT_H__
 #define __KERN_MM_MEMLAYOUT_H__
 
 /* This file contains the definitions for memory management in our OS. */
 
-#define KERNBASE            0x80000000
+#define KERNBASE            0x80000000a                 // kernel的装载地址
 
 #define KMEMSIZE            (32 << 20)                 // 512M the maximum amount of physical memory
 
@@ -12,8 +14,8 @@
 #define KSTACKPAGE          2                           // # of pages in kernel stack
 #define KSTACKSIZE          (KSTACKPAGE * 4096)       // sizeof kernel stack
 
-#define USERBASE            0x10000000
-#define USERTOP             MIPS_KSEG0 
+#define USERBASE            0x10000000              // 用户空间的起始地址
+#define USERTOP             MIPS_KSEG0              // 用户空间的终止地址
 
 #define USTACKTOP           USERTOP
 #define USTACKPAGE          16                         // # of pages in user stack
@@ -60,6 +62,7 @@ struct Page {
 #define PG_swap                     4       // the page is in the active or inactive page list (and swap hash table)
 #define PG_active                   5       // the page is in the active page list
 
+// 一些修改Page的控制信息的宏
 #define SetPageReserved(page)       set_bit(PG_reserved, &((page)->flags))
 #define ClearPageReserved(page)     clear_bit(PG_reserved, &((page)->flags))
 #define PageReserved(page)          test_bit(PG_reserved, &((page)->flags))
