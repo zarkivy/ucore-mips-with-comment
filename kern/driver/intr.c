@@ -12,7 +12,6 @@ intr_enable(void) {
 	get_status(x);
 	x |= ST0_IE;
 	set_status(x);
-  
 }
 
 /* intr_disable - disable irq interrupt */

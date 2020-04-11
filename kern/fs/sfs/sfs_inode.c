@@ -349,6 +349,9 @@ sfs_dirent_read_nolock(struct sfs_fs *sfs, struct sfs_inode *sin, int slot, stru
         }                                                                           \
     } while (0)
 
+/*
+    查找与路径名匹配的目录项
+*/
 static int
 sfs_dirent_search_nolock(struct sfs_fs *sfs, struct sfs_inode *sin, const char *name, uint32_t *ino_store, int *slot, int *empty_slot) {
     assert(strlen(name) <= SFS_MAX_FNAME_LEN);
@@ -395,16 +398,23 @@ sfs_dirent_findino_nolock(struct sfs_fs *sfs, struct sfs_inode *sin, uint32_t in
     return -E_NOENT;
 }
 
+/*
+    调用sfs_dirent_search_nolock函数来查找与路径名匹配的目录项，如果找到目录项，
+    则根据目录项中记录的inode所处的数据块索引值找到路径名对应的SFS磁盘inode，
+    并读入SFS磁盘inode对的内容，创建SFS内存inode
+*/
 static int
 sfs_lookup_once(struct sfs_fs *sfs, struct sfs_inode *sin, const char *name, struct inode **node_store, int *slot) {
     int ret;
     uint32_t ino;
     lock_sin(sin);
     {
+        // 找到对应的目录项
         ret = sfs_dirent_search_nolock(sfs, sin, name, &ino, slot, NULL);
     }
     unlock_sin(sin);
     if (ret == 0) {
+        // 用磁盘块号加载inode的内容
         ret = sfs_load_inode(sfs, node_store, ino);
     }
     return ret;
@@ -436,6 +446,12 @@ sfs_close(struct inode *node) {
     return vop_fsync(node);
 }
 
+/*
+    sfs io 读写
+    三部分来读取文件，
+    每次通过sfs_bmap_load_nolock函数获取文件索引编号，
+    然后调用sfs_buf_op完成实际的文件读写操作
+*/
 static int
 sfs_io_nolock(struct sfs_fs *sfs, struct sfs_inode *sin, void *buf, off_t offset, size_t *alenp, bool write) {
     struct sfs_disk_inode *din = sin->din;
@@ -476,26 +492,29 @@ sfs_io_nolock(struct sfs_fs *sfs, struct sfs_inode *sin, void *buf, off_t offset
     uint32_t nblks = endpos / SFS_BLKSIZE - blkno;
 
   //LAB8:EXERCISE1 2009010989 HINT: call sfs_bmap_load_nolock, sfs_rbuf, sfs_rblock,etc. read different kind of blocks in file
-    
+    // 读取第一部分的数据
     if((blkoff = offset % SFS_BLKSIZE)!= 0) {
+        //计算第一个数据块的大小
         if(nblks){
           size = SFS_BLKSIZE - blkoff;
         }else{
           size  = endpos - offset;
         }
+        //找到内存文件索引对应的block的编号inode
         if ((ret = sfs_bmap_load_nolock(sfs, sin, blkno, &ino)) != 0) {
             goto out;
         }
         if ((ret = sfs_buf_op(sfs, buf, size, ino, blkoff)) != 0) {
             goto out;
         }
+        //完成实际的读写操作
         alen += size;
         if (nblks == 0) {
             goto out;
         }
         buf += size, blkno ++, nblks --;
     }
-
+    //读取中间部分的数据，将其分为size大学的块，然后一次读一块直至读完
     size = SFS_BLKSIZE;
     while(nblks != 0){
         if((ret = sfs_bmap_load_nolock(sfs, sin, blkno, &ino)) != 0) {
@@ -506,7 +525,7 @@ sfs_io_nolock(struct sfs_fs *sfs, struct sfs_inode *sin, void *buf, off_t offset
         }
         alen += size, buf += size, blkno ++, nblks --;
     }
-
+    //读取第三部分的数据
     if((size = endpos % SFS_BLKSIZE) != 0) {
         if ((ret = sfs_bmap_load_nolock(sfs, sin, blkno, &ino)) != 0) {
             goto out;
@@ -811,6 +830,7 @@ out_unlock:
 static int
 sfs_lookup(struct inode *node, char *path, struct inode **node_store) {
     struct sfs_fs *sfs = fsop_info(vop_fs(node), sfs);
+    // //以“/”为分割符，从左至右逐一分解path获得各个子目录和最终文件对应的inode节点。
     assert(*path != '\0' && *path != '/');
     vop_ref_inc(node);
     struct sfs_inode *sin = vop_info(node, sfs_inode);
@@ -819,12 +839,15 @@ sfs_lookup(struct inode *node, char *path, struct inode **node_store) {
         return -E_NOTDIR;
     }
     struct inode *subnode;
+    //循环进一步调用sfs_lookup_once查找以“test”子目录下的文件“testfile1”所对应的inode节点。
     int ret = sfs_lookup_once(sfs, sin, path, &subnode, NULL);
 
 	vop_ref_dec(node);
+    
     if (ret != 0) {
         return ret;
     }
+    //当无法分解path后，就意味着找到了需要对应的inode节点，就可顺利返回了。
     *node_store = subnode;
     return 0;
 }

@@ -1,3 +1,6 @@
+/*
+    设备标准写入
+*/
 #include <defs.h>
 #include <stdio.h>
 #include <wait.h>

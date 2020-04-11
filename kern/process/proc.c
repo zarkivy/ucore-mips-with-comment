@@ -118,7 +118,7 @@ alloc_proc(void) {
       list_init(&(proc->list_link));
       proc->time_slice = 0;
       proc->cptr = proc->yptr = proc->optr = NULL;
-      proc->fs_struct = NULL;
+      proc->fs_struct = NULL;  //初始化fs中的进程控制结构
     }
     return proc;
 }
@@ -576,25 +576,38 @@ load_icode_read(int fd, void *buf, size_t len, off_t offset) {
 // 3. copy TEXT/DATA/BSS parts in binary to memory space of process
 // 4. call mm_map to setup user stack, and put parameters into user stack
 // 5. setup trapframe for user environment	
+/*
+    将文件加载到内存中执行
+        - 建立内存管理器
+        - 建立页目录
+        - 将文件逐个段加载到内存中，这里要注意设置虚拟地址与物理地址之间的映射
+        - 建立相应的虚拟内存映射表
+        - 建立并初始化用户堆栈
+        - 处理用户栈中传入的参数
+        - 最后很关键的一步是设置用户进程的中断帧
+*/
 static int
 load_icode(int fd, int argc, char **kargv) {
-    if (current->mm != NULL) {
+    // 建立内存管理器
+    if (current->mm != NULL) { // 要求当前内存管理器为空
         panic("load_icode: current->mm must be empty.\n");
     }
     //panic("unimpl");
-    int ret = -E_NO_MEM;
-    struct mm_struct *mm;
+    int ret = -E_NO_MEM;  // E_NO_MEM代表因为存储设备产生的请求错误
+    struct mm_struct *mm; // 建立内存管理器
     if ((mm = mm_create()) == NULL) {
         goto bad_mm;
     }
+    // 建立页目录
     if (setup_pgdir(mm) != 0) {
         goto bad_pgdir_cleanup_mm;
     }
 
     //assert(((uint32_t)binary & 0x3) == 0);
-
+    // 从文件加载程序到内存
     struct __elfhdr ___elfhdr__;
     struct elfhdr32 __elf, *elf = &__elf;
+    // 读取elf文件头
     if ((ret = load_icode_read(fd, &___elfhdr__, sizeof(struct __elfhdr), 0)) != 0) {
         goto bad_elf_cleanup_pgdir;
     }
@@ -610,7 +623,8 @@ load_icode(int fd, int argc, char **kargv) {
     uint32_t vm_flags, phnum;
     uint32_t perm = 0;
     struct Page *page;
-    for (phnum = 0; phnum < elf->e_phnum; phnum ++) {
+    //e_phnum代表程序段入口地址数目，即多少各段
+    for (phnum = 0; phnum < elf->e_phnum; phnum ++) { //循环读取程序的每个段的头部  
       off_t phoff = elf->e_phoff + sizeof(struct proghdr) * phnum;
       if ((ret = load_icode_read(fd, ph, sizeof(struct proghdr), phoff)) != 0) {
         goto bad_cleanup_mmap;
@@ -622,6 +636,7 @@ load_icode(int fd, int argc, char **kargv) {
         ret = -E_INVAL_ELF;
         goto bad_cleanup_mmap;
       }
+      // 建立虚拟地址与物理地址之间的映射
       vm_flags = 0;
       //ptep_set_u_read(&perm);
       perm |= PTE_U;
@@ -638,7 +653,8 @@ load_icode(int fd, int argc, char **kargv) {
       size_t off, size;
       uintptr_t start = ph->p_va, end, la = ROUNDDOWN_2N(start, PGSHIFT);
 
-      end = ph->p_va + ph->p_filesz;
+      // 复制数据段和代码段
+      end = ph->p_va + ph->p_filesz; // 计算数据段和代码段终止地址
       while (start < end) {
         if ((page = pgdir_alloc_page(mm->pgdir, la, perm)) == NULL) {
           ret = -E_NO_MEM;
@@ -648,13 +664,14 @@ load_icode(int fd, int argc, char **kargv) {
         if (end < la) {
           size -= la - end;
         }
+        // 每次读取size大小的块，直至全部读完
         if ((ret = load_icode_read(fd, page2kva(page) + off, size, offset)) != 0) {
           goto bad_cleanup_mmap;
         }
         start += size, offset += size;
       }
-
-      end = ph->p_va + ph->p_memsz;
+      //建立BSS段
+      end = ph->p_va + ph->p_memsz; //同样计算终止地址
 
       if (start < la) {
         if (start >= end) {
@@ -678,19 +695,22 @@ load_icode(int fd, int argc, char **kargv) {
         if (end < la) {
           size -= la - end;
         }
+        //每次操作size大小的块
         memset(page2kva(page) + off, 0, size);
         start += size;
       }
     }
+    // 关闭文件，加载程序结束
     sysfile_close(fd);
 
     //mm->brk_start = mm->brk = ROUNDUP(mm->brk_start, PGSIZE);
 
+    // 建立相应的虚拟内存映射表
     vm_flags = VM_READ | VM_WRITE | VM_STACK;
     if ((ret = mm_map(mm, USTACKTOP - USTACKSIZE, USTACKSIZE, vm_flags, NULL)) != 0) {
       goto bad_cleanup_mmap;
     }
-
+    // 设置用户栈
     mm_count_inc(mm);
     current->mm = mm;
     current->cr3 = PADDR(mm->pgdir);
@@ -706,16 +726,19 @@ load_icode(int fd, int argc, char **kargv) {
     tf->tf_eip = elf->e_entry;
     tf->tf_eflags = FL_IF;
 #endif
-	  uintptr_t stacktop = USTACKTOP - argc * PGSIZE;
+    // 处理用户栈中传入的参数，其中argc对应参数个数，uargv[]对应参数的具体内容的地址
+	uintptr_t stacktop = USTACKTOP - argc * PGSIZE;
     char **uargv = (char **)(stacktop - argc * sizeof(char *));
     int i;
-    for (i = 0; i < argc; i ++) {
+    for (i = 0; i < argc; i ++) { // 将所有参数取出来放置uargv
         uargv[i] = strcpy((char *)(stacktop + i * PGSIZE), kargv[i]);
     }
     //stacktop = (uintptr_t)uargv - sizeof(int);
     //*(int *)stacktop = argc;
 
+    // 设置进程的中断帧
     struct trapframe *tf = current->tf;
+    // 初始化tf，设置中断帧
     memset(tf, 0, sizeof(struct trapframe));
 
     tf->tf_epc = elf->e_entry;
@@ -730,6 +753,7 @@ load_icode(int fd, int argc, char **kargv) {
 
     //kprintf("## %08x\n", tf->tf_status);
     ret = 0;
+    // 错误处理部分
 out:
     return ret;
 bad_cleanup_mmap:

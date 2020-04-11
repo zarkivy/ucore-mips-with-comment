@@ -27,18 +27,18 @@ struct iobuf;
  * need to worry about it.
  */
 struct inode {
-    union {
-        struct device __device_info;
-        struct sfs_inode __sfs_inode_info;
+    union { // 包含不同文件系统特定inode信息的union域
+        struct device __device_info;       // 设备文件系统内存Inode信息
+        struct sfs_inode __sfs_inode_info; // SFS文件系统内存inode信息
     } in_info;
     enum {
         inode_type_device_info = 0x1234,
         inode_type_sfs_inode_info,
-    } in_type;
-    atomic_t ref_count;
-    atomic_t open_count;
-    struct fs *in_fs;
-    const struct inode_ops *in_ops;
+    } in_type;   //此inode 所属文件系统类型
+    atomic_t ref_count;  // 此inode的引用计数
+    atomic_t open_count; // 打开此inode对应文件的个数
+    struct fs *in_fs;    // 抽象的文件系统，包含访问文件系统的函数指针
+    const struct inode_ops *in_ops; // 抽象的inode操作，包含访问inode的函数指针
 };
 
 #define __in_type(type)                                             inode_type_##type##_info

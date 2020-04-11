@@ -6,6 +6,7 @@
 #include <error.h>
 #include <assert.h>
 
+// 调用vfs_lookup找到path对应文件的inode，然后调用vop_open函数打开文件
 int
 vfs_open(char *path, uint32_t open_flags, struct inode **node_store) {
     bool can_write = 0;
@@ -59,7 +60,8 @@ vfs_open(char *path, uint32_t open_flags, struct inode **node_store) {
             return ret;
         }
     }
-    *node_store = node;
+    // 找到节点并进行赋值
+    *node_store = node;  
     return 0;
 }
 

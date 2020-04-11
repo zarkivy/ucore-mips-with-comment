@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <error.h>
 
+
+// 打开设备或者文件
 static int
 dev_open(struct inode *node, uint32_t open_flags) {
     if (open_flags & (O_CREAT | O_TRUNC | O_EXCL | O_APPEND)) {
@@ -15,30 +17,37 @@ dev_open(struct inode *node, uint32_t open_flags) {
     return dop_open(dev, open_flags);
 }
 
+// 关闭设备或者文件
 static int
 dev_close(struct inode *node) {
     struct device *dev = vop_info(node, device);
     return dop_close(dev);
 }
 
+// 将信息读入iobuf
 static int
 dev_read(struct inode *node, struct iobuf *iob) {
     struct device *dev = vop_info(node, device);
     return dop_io(dev, iob, 0);
 }
 
+// 将信息写入iobuf
 static int
 dev_write(struct inode *node, struct iobuf *iob) {
     struct device *dev = vop_info(node, device);
     return dop_io(dev, iob, 1);
 }
 
+// 对io设备进行管理，op 是指令
 static int
 dev_ioctl(struct inode *node, int op, void *data) {
     struct device *dev = vop_info(node, device);
     return dop_ioctl(dev, op, data);
 }
 
+// 调用stat（）
+// 设置类型和大小（仅限块设备）
+// 设备的链接计数始终为1
 static int
 dev_fstat(struct inode *node, struct stat *stat) {
     int ret;
@@ -53,6 +62,9 @@ dev_fstat(struct inode *node, struct stat *stat) {
     return 0;
 }
 
+// 返回type
+// 如果设备是已知长度，则设备是"block device"
+// 如果在流中生成数据，则是"character device"
 static int
 dev_gettype(struct inode *node, uint32_t *type_store) {
     struct device *dev = vop_info(node, device);
@@ -60,6 +72,9 @@ dev_gettype(struct inode *node, uint32_t *type_store) {
     return 0;
 }
 
+// 尝试寻找
+// 对于块设备，需要块对齐
+// 对于字符设备，完全禁止查找
 static int
 dev_tryseek(struct inode *node, off_t pos) {
     struct device *dev = vop_info(node, device);
@@ -73,6 +88,8 @@ dev_tryseek(struct inode *node, off_t pos) {
     return -E_INVAL;
 }
 
+// 名称查找
+// 通过路径查找
 static int
 dev_lookup(struct inode *node, char *path, struct inode **node_store) {
     if (*path != '\0') {
@@ -83,6 +100,7 @@ dev_lookup(struct inode *node, char *path, struct inode **node_store) {
     return 0;
 }
 
+// 设备索引节点功能表
 static const struct inode_ops dev_node_ops = {
     .vop_magic                      = VOP_MAGIC,
     .vop_open                       = dev_open,
@@ -102,6 +120,7 @@ static const struct inode_ops dev_node_ops = {
         dev_init_##x();                                 \
     } while (0)
 
+// 初始化内联虚拟文件系统层设备
 void
 dev_init(void) {
    // init_device(null);
@@ -110,6 +129,7 @@ dev_init(void) {
     init_device(disk0);
 }
 
+// 为 虚拟层设备创建节点
 struct inode *
 dev_create_inode(void) {
     struct inode *node;

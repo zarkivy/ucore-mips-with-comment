@@ -1,3 +1,4 @@
+/*文件系统*/
 #include <defs.h>
 #include <kmalloc.h>
 #include <sem.h>
@@ -7,11 +8,15 @@
 #include <sfs.h>
 #include <inode.h>
 #include <assert.h>
+
 //called when init_main proc start
 void
 fs_init(void) {
+    // 虚拟文件系统初始化
     vfs_init();
+    // 设备初始化
     dev_init();
+    // Simple FS 文件系统初始化
     sfs_init();
 }
 

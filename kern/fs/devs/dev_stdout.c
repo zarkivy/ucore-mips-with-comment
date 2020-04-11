@@ -1,3 +1,6 @@
+/*
+    设备标准读出
+*/
 #include <defs.h>
 #include <stdio.h>
 #include <dev.h>

@@ -1,3 +1,6 @@
+/*
+    系统控制台程序
+*/
 #include <defs.h>
 #include <thumips.h>
 #include <stdio.h>

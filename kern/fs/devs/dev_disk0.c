@@ -1,3 +1,6 @@
+/*
+    磁盘设备，此文件中定义三个设备，磁盘设备，标准输入设备，标准输出设备，分别实现对应的读、写、开、关
+*/
 #include <defs.h>
 #include <mmu.h>
 #include <sem.h>
@@ -17,26 +20,31 @@
 static char *disk0_buffer;
 static semaphore_t disk0_sem;
 
+// 上锁
 static void
 lock_disk0(void) {
     down(&(disk0_sem));
 }
 
+// 关锁
 static void
 unlock_disk0(void) {
     up(&(disk0_sem));
 }
 
+// 磁盘打开
 static int
 disk0_open(struct device *dev, uint32_t open_flags) {
     return 0;
 }
 
+// 磁盘关闭
 static int
 disk0_close(struct device *dev) {
     return 0;
 }
 
+// 如果没有锁，则读取一个块
 static void
 disk0_read_blks_nolock(uint32_t blkno, uint32_t nblks) {
     int ret;
@@ -47,6 +55,7 @@ disk0_read_blks_nolock(uint32_t blkno, uint32_t nblks) {
     }
 }
 
+// 向块中进行写入
 static void
 disk0_write_blks_nolock(uint32_t blkno, uint32_t nblks) {
     int ret;
@@ -57,6 +66,7 @@ disk0_write_blks_nolock(uint32_t blkno, uint32_t nblks) {
     }
 }
 
+// 磁盘io读写
 static int
 disk0_io(struct device *dev, struct iobuf *iob, bool write) {
     off_t offset = iob->io_offset;
@@ -103,11 +113,14 @@ disk0_io(struct device *dev, struct iobuf *iob, bool write) {
     return 0;
 }
 
+// 磁盘设备控制
 static int
 disk0_ioctl(struct device *dev, int op, void *data) {
     return -E_UNIMP;
 }
 
+// 磁盘设备初始化
+// 对块进行初始化，磁盘功能函数进行对应连接
 static void
 disk0_device_init(struct device *dev) {
     static_assert(DISK0_BLKSIZE % SECTSIZE == 0);
@@ -128,6 +141,7 @@ disk0_device_init(struct device *dev) {
     }
 }
 
+// 为磁盘设备，新建虚拟文件层节点
 void
 dev_init_disk0(void) {
     struct inode *node;

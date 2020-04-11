@@ -143,6 +143,9 @@ file_testfd(int fd, bool readable, bool writable) {
     return 1;
 }
 
+/*
+
+*/
 int
 file_open(char *path, uint32_t open_flags) {
     bool readable = 0, writable = 0;
@@ -156,12 +159,14 @@ file_open(char *path, uint32_t open_flags) {
         return -E_INVAL;
     }
 
+    // 申请一个文件结构体对应的大小
     int ret;
     struct file *file;
     if ((ret = filemap_alloc(NO_FD, &file)) != 0) {
         return ret;
     }
 
+    // 使用vfs_open，找到对应文件节点node
     struct inode *node;
     if ((ret = vfs_open(path, open_flags, &node)) != 0) {
         filemap_free(file);
