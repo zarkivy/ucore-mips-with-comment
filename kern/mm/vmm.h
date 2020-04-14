@@ -1,3 +1,4 @@
+// 定义了虚拟内存管理的相关数据结构与宏
 #ifndef __KERN_MM_VMM_H__
 #define __KERN_MM_VMM_H__
 

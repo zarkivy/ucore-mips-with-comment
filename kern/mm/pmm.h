@@ -1,3 +1,4 @@
+// 定义了物理内存管理的相关数据结构与宏
 #ifndef __KERN_MM_PMM_H__
 #define __KERN_MM_PMM_H__
 

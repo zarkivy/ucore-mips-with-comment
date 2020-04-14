@@ -1,3 +1,4 @@
+// mmu 地址转换的相关宏
 #ifndef __KERN_MM_MMU_H__
 #define __KERN_MM_MMU_H__
 

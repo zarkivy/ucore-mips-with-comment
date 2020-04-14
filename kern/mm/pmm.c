@@ -1,3 +1,4 @@
+// 实现了物理内存管理的相关函数
 #include <defs.h>
 #include <thumips.h>
 #include <stdio.h>
@@ -9,17 +10,17 @@
 #include <sync.h>
 #include <error.h>
 
-
-
-
+// 记录全局物理 page 的数组
 // virtual address of physicall page array
 struct Page *pages;
+
 // amount of physical memory (in pages)
 size_t npage = 0;
 
 // virtual address of boot-time page directory
 pde_t *boot_pgdir = NULL;
 
+// mips 处理器没有 CR3 寄存器，我们用内存空间来模拟
 /* this is our emulated "CR3" */
 pde_t *current_pgdir = NULL;
 
@@ -33,6 +34,7 @@ static void check_alloc_page(void);
 static void check_pgdir(void);
 static void check_boot_pgdir(void);
 
+// 加载 cr3
 void lcr3(uintptr_t cr3)
 {
   current_pgdir = (pde_t*)cr3;
@@ -41,6 +43,7 @@ void lcr3(uintptr_t cr3)
 //init_pmm_manager - initialize a pmm_manager instance
 static void
 init_pmm_manager(void) {
+    // 物理内存管理器采用伙伴算法
     pmm_manager = &buddy_pmm_manager;
     kprintf("memory management: ");
       kprintf(pmm_manager->name);
@@ -93,7 +96,6 @@ nr_free_pages(void) {
 }
 
 /* pmm_init - initialize the physical memory management */
-// 初始化物理内存管理
 static void
 page_init(void) {
   uint32_t maxpa;
@@ -168,6 +170,7 @@ boot_alloc_page(void) {
 
 //pmm_init - setup a pmm to manage physical memory, build PDT&PT to setup paging mechanism 
 //         - check the correctness of pmm & paging mechanism, print PDT&PT
+// 初始化物理内存管理
 void
 pmm_init(void) {
     //We need to alloc/free the physical memory (granularity is 4KB or other size). 
