@@ -1,4 +1,4 @@
-// 此头文件主要定义了ucore的物理内存结构
+// 此头文件主要定义了 ucore 的物理内存结构
 
 #ifndef __KERN_MM_MEMLAYOUT_H__
 #define __KERN_MM_MEMLAYOUT_H__

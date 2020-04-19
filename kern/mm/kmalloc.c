@@ -1,3 +1,4 @@
+// 基本的动态内存分配实现的
 #include <defs.h>
 #include <list.h>
 #include <memlayout.h>

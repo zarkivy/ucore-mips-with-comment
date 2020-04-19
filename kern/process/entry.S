@@ -1,3 +1,5 @@
+// 定义了核心线程的入口指令
+
 .text
 .globl kernel_thread_entry
 /* $a0 = arg, $a1 = func
@@ -12,5 +14,4 @@ kernel_thread_entry:        # void kernel_thread(void)
   jal $t0 
   nop
   /* never here */
-
 

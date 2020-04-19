@@ -12,6 +12,8 @@
 extern volatile int ticks;
 
 // 以下为系统调用入口函数的实现
+// 具体的功能实现函数分布于各功能模块的源码中
+// 例如 do_fork() 等进程相关的功能函数实现存在于 proc.c 中
 
 static int
 sys_exit(uint32_t arg[]) {

@@ -17,7 +17,7 @@ enum proc_state {
     PROC_FORCE_32 = 0xFFFFFFFF
 };
 
-// 上下文结构体，本质是用来保存寄存器值的
+// 进程切换上下文结构体，本质是用来保存寄存器值的
 // Saved registers for kernel context switches.
 // Don't need to save all the %fs etc. segment registers,
 // because they are constant across kernel contexts.
@@ -40,9 +40,9 @@ struct context {
   uint32_t sf_sp;
 };
 
-#define PROC_NAME_LEN               30
-#define MAX_PROCESS                 4096
-#define MAX_PID                     (MAX_PROCESS * 2)
+#define PROC_NAME_LEN               30                  // 进程名长度
+#define MAX_PROCESS                 4096                // OS 中最大的进程数
+#define MAX_PID                     (MAX_PROCESS * 2)   // OS 中最大的进程号
 
 extern list_entry_t proc_list;
 
