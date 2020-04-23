@@ -6,12 +6,14 @@
 #include <assert.h>
 #include <default_sched.h>
 
+// 增加了定时器（timer）机制，用于进程/线程的do_sleep功能——实验手册
 static list_entry_t timer_list;
 
 static struct sched_class *sched_class;
 
 static struct run_queue *rq;
 
+// ↓这三个函数都只是包装一下sched_class->，可能是因为箭头不好打吧
 static inline void
 sched_class_enqueue(struct proc_struct *proc) {
     if (proc != idleproc) {
@@ -29,6 +31,10 @@ sched_class_pick_next(void) {
     return sched_class->pick_next(rq);
 }
 
+// 每一个 tick 调用`sched_class_proc_tick`，
+// 如果是 idleproc，就让它`need_resched = 1;`（直接让它待调度）
+// 如果不是就调用`sched_class->proc_tick(rq, proc);`
+// proc_tick在这里是RR_proc_tick，轮盘调度，看时间片
 static void
 sched_class_proc_tick(struct proc_struct *proc) {
     if (proc != idleproc) {
@@ -41,19 +47,22 @@ sched_class_proc_tick(struct proc_struct *proc) {
 
 static struct run_queue __rq;
 
+// 初始化，初始化timer列表、sched_class（管理器）、runqueue
 void
 sched_init(void) {
     list_init(&timer_list);
 
     sched_class = &default_sched_class;
 
-    rq = &__rq;
+    rq = &__rq; // 这是干嘛
     rq->max_time_slice = 20;
     sched_class->init(rq);
 
     kprintf("sched class: %s\n", sched_class->name);
 }
 
+// wakeup_proc函数其实完成了把一个就绪进程放入到就绪进程队列中的工作，为此还调用了一个调度类接口函数sched_class_enqueue，
+// 这使得wakeup_proc的实现与具体调度算法无关    —— 摘自实验手册
 void
 wakeup_proc(struct proc_struct *proc) {
     assert(proc->state != PROC_ZOMBIE);
@@ -74,6 +83,12 @@ wakeup_proc(struct proc_struct *proc) {
     local_intr_restore(intr_flag);
 }
 
+// 真正的调度部分，由cpu_idle在need_resched == 1时调用，所以一开始先把它置0
+// 如果是RUNNABLE直接加入调度队列（插入run_queue）
+// 拿出run_queue第一个进程next，不是NULL的话就从中剔除，
+// 是NULL就赋值idleproc（就是说其实run_queue是空的，那这个进程命名为idleproc）
+// （可是idleproc应该是在proc_init里就被赋值了，这里再赋值是为什么？）
+// 给next增加runs次数，如果next不是当前进程，就让它跑起来（给它CPU）
 void
 schedule(void) {
     bool intr_flag;
@@ -102,6 +117,9 @@ schedule(void) {
     local_intr_restore(intr_flag);
 }
 
+// 添加timer，如果当前timer的剩余时间小于下一个timer，还会把下一个timer减去当前timer这么多的时间
+// 可是为什么要这样做呢？
+// 向系统添加某个初始化过的timer_t，该定时器在 指定时间后被激活，并将对应的进程唤醒至runnable（如果当前进程处在等待状态）——手册
 void
 add_timer(timer_t *timer) {
     bool intr_flag;
@@ -124,6 +142,9 @@ add_timer(timer_t *timer) {
     local_intr_restore(intr_flag);
 }
 
+// 删除timer，还会把dangqiantimer的剩余时间给下一个timer
+// 可是为什么要这么做呢？
+// 向系统删除（或者说取消）某一个定时器。该定时器在取消后不会被系统激活并唤醒进程——手册
 void
 del_timer(timer_t *timer) {
     bool intr_flag;
@@ -143,7 +164,11 @@ del_timer(timer_t *timer) {
     local_intr_restore(intr_flag);
 }
 
-
+// run_timer_list函数在每次timer中断处理过程中被调用，从而可用来调用调度算法所需的timer时间事件感知操作，
+// 调整相关进程的进程调度相关的属性值。通过调用调度类接口函数sched_class_proc_tick使得此操作与具体调度算法无关——实验手册
+// 简而言之是timer到期了就wakeup_proc，然后不管到没到期都调用sched_class_proc_tick
+// 更新当前系统时间点，遍历当前所有处在系统管理内的定时器，找出所有应该激活的计数器，
+// 并激活它们。该过程在且只在每次定时器中断时被调用。在ucore 中，其还会调用调度器事件处理程序——实验手册
 void
 run_timer_list(void) {
     bool intr_flag;

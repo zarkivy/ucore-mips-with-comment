@@ -7,6 +7,7 @@
 
 struct proc_struct;
 
+// timer结构体，有让它可以被加入list的le，还有时间、指向进程的指针
 typedef struct {
     unsigned int expires;
     struct proc_struct *proc;
@@ -16,6 +17,7 @@ typedef struct {
 #define le2timer(le, member)            \
 to_struct((le), timer_t, member)
 
+// 对某定时器 进行初始化，让它在 expires 时间片之后唤醒 proc 进程——手册
 static inline timer_t *
 timer_init(timer_t *timer, struct proc_struct *proc, int expires) {
     timer->expires = expires;
@@ -26,6 +28,7 @@ timer_init(timer_t *timer, struct proc_struct *proc, int expires) {
 
 struct run_queue;
 
+// 为了适应多种调度算法总结而来的接口
 // The introduction of scheduling classes is borrrowed from Linux, and makes the 
 // core scheduler quite extensible. These classes (the scheduler modules) encapsulate 
 // the scheduling policies. 
@@ -51,6 +54,7 @@ struct sched_class {
 	 */
 };
 
+// 名字叫队列，其实只是一个列表，两个列表的属性集合在一起而已
 struct run_queue {
     list_entry_t run_list;
     unsigned int proc_num;

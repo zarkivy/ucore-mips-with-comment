@@ -73,7 +73,8 @@ list_entry_t proc_list;
 static list_entry_t hash_list[HASH_LIST_SIZE];
 
 // 三个特殊的指针，一个指向空闲进程，一个指向最开始的init进程，最后一个指向当前进程（永远指向当前进程，就相当于进程的this指针）
-// idle proc
+// idle proc —— 最初的进程“创建第0个内核线程idleproc”
+// 第0个内核线程主要工作是完成内核中各个子系统的初始化，然后就通过执行cpu_idle函数开始过退休生活了——实验说明
 struct proc_struct *idleproc = NULL;
 // init proc
 struct proc_struct *initproc = NULL;
@@ -1084,6 +1085,8 @@ proc_init(void) {
 }
 
 // 不停轮询看当前进程需不需要调度，需要就调用调度器（貌似只有idleproc会调用此函数？）
+// idleproc内核线程的工作就是不停地查询，看是否有其他内核线程可以执行了，如果有，马上让调度器选择那个内核线程执行——实验说明
+// 在 sched_class_proc_tick 会设置need_resched=1，有两种情况：是idleproc则直接置1，不是就等时间片没了置1
 // cpu_idle - at the end of kern_init, the first kernel thread idleproc will do below works
 void
 cpu_idle(void) {
