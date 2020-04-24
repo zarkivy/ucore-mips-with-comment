@@ -8,11 +8,11 @@
 #include <assert.h>
 #include <default_sched.h>
 
-<<<<<<< Updated upstream
+ 
 // 增加了定时器（timer）机制，用于进程/线程的do_sleep功能——实验手册
-=======
+ 
 // 计时器链表
->>>>>>> Stashed changes
+ 
 static list_entry_t timer_list;
 
 // 总调度器指针，指向了 default_sched.c 中的 default_sched_class
@@ -21,11 +21,11 @@ static struct sched_class *sched_class;
 // 运行进程队列
 static struct run_queue *rq;
 
-<<<<<<< Updated upstream
+ 
 // ↓这三个函数都只是包装一下sched_class->，可能是因为箭头不好打吧
-=======
+ 
 // 进程进入调度器
->>>>>>> Stashed changes
+ 
 static inline void
 sched_class_enqueue(struct proc_struct *proc) {
     if (proc != idleproc) {
@@ -45,14 +45,12 @@ sched_class_pick_next(void) {
     return sched_class->pick_next(rq);
 }
 
-<<<<<<< Updated upstream
 // 每一个 tick 调用`sched_class_proc_tick`，
 // 如果是 idleproc，就让它`need_resched = 1;`（直接让它待调度）
 // 如果不是就调用`sched_class->proc_tick(rq, proc);`
 // proc_tick在这里是RR_proc_tick，轮盘调度，看时间片
-=======
+ 
 // 调度器中的进程时钟值+1
->>>>>>> Stashed changes
 static void
 sched_class_proc_tick(struct proc_struct *proc) {
     // 不为空闲进程则 tick 一次
@@ -67,12 +65,12 @@ sched_class_proc_tick(struct proc_struct *proc) {
 
 static struct run_queue __rq;
 
-<<<<<<< Updated upstream
+ 
 // 初始化，初始化timer列表、sched_class（管理器）、runqueue
-=======
+ 
 
 // 调度器初始化函数
->>>>>>> Stashed changes
+ 
 void
 sched_init(void) {
     list_init(&timer_list);
@@ -86,13 +84,13 @@ sched_init(void) {
     kprintf("sched class: %s\n", sched_class->name);
 }
 
-<<<<<<< Updated upstream
+ 
 // wakeup_proc函数其实完成了把一个就绪进程放入到就绪进程队列中的工作，为此还调用了一个调度类接口函数sched_class_enqueue，
 // 这使得wakeup_proc的实现与具体调度算法无关    —— 摘自实验手册
-=======
+ 
 
 // 唤醒进程
->>>>>>> Stashed changes
+ 
 void
 wakeup_proc(struct proc_struct *proc) {
     assert(proc->state != PROC_ZOMBIE);
@@ -147,14 +145,14 @@ schedule(void) {
     local_intr_restore(intr_flag);
 }
 
-<<<<<<< Updated upstream
+ 
 // 添加timer，如果当前timer的剩余时间小于下一个timer，还会把下一个timer减去当前timer这么多的时间
 // 可是为什么要这样做呢？
 // 向系统添加某个初始化过的timer_t，该定时器在 指定时间后被激活，并将对应的进程唤醒至runnable（如果当前进程处在等待状态）——手册
-=======
+ 
 
 // 向链表中添加计时器
->>>>>>> Stashed changes
+ 
 void
 add_timer(timer_t *timer) {
     bool intr_flag;
@@ -177,13 +175,13 @@ add_timer(timer_t *timer) {
     local_intr_restore(intr_flag);
 }
 
-<<<<<<< Updated upstream
+ 
 // 删除timer，还会把dangqiantimer的剩余时间给下一个timer
 // 可是为什么要这么做呢？
 // 向系统删除（或者说取消）某一个定时器。该定时器在取消后不会被系统激活并唤醒进程——手册
-=======
+ 
 // 从链表中删除计时器
->>>>>>> Stashed changes
+ 
 void
 del_timer(timer_t *timer) {
     bool intr_flag;
