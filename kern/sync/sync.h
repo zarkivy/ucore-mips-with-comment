@@ -18,11 +18,13 @@ lock_init(lock_t *lock) {
     *lock = 0;
 }
 
+// 尝试获取锁一次
 static inline bool
 try_lock(lock_t *lock) {
     return !test_and_set_bit(0, lock);
 }
 
+// 反复尝试获取锁，获取失败一次则进入调度
 static inline void
 lock(lock_t *lock) {
     while (!try_lock(lock)) {
@@ -30,6 +32,7 @@ lock(lock_t *lock) {
     }
 }
 
+// 释放锁
 static inline void
 unlock(lock_t *lock) {
     if (!test_and_clear_bit(0, lock)) {

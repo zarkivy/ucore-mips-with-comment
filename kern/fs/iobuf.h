@@ -1,3 +1,5 @@
+// 输入输出缓冲区的定义与相关方法声明
+
 #ifndef __KERN_FS_IOBUF_H__
 #define __KERN_FS_IOBUF_H__
 

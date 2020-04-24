@@ -1,14 +1,18 @@
+// 等待队列的定义与相关方法声明
+
 #ifndef __KERN_SYNC_WAIT_H__
 #define __KERN_SYNC_WAIT_H__
 
 #include <list.h>
 
+// 等待队列
 typedef struct {
     list_entry_t wait_head;
 } wait_queue_t;
 
 struct proc_struct;
 
+// 等待队列中管理一个等待态的进程的结构
 typedef struct {
     struct proc_struct *proc;
     uint32_t wakeup_flags;

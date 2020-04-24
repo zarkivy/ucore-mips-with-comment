@@ -1,3 +1,5 @@
+// 定义了调度器的具体实现 轮盘调度
+
 #include <defs.h>
 #include <list.h>
 #include <proc.h>

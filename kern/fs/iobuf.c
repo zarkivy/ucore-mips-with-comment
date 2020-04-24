@@ -1,9 +1,12 @@
+// 输入输出缓冲区的方法实现
+
 #include <defs.h>
 #include <string.h>
 #include <iobuf.h>
 #include <error.h>
 #include <assert.h>
 
+// 缓冲区初始化
 struct iobuf *
 iobuf_init(struct iobuf *iob, void *base, size_t len, off_t offset) {
     iob->io_base = base;

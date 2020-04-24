@@ -1,4 +1,4 @@
-// 定义了核心线程的入口指令
+/* 定义了核心线程的入口指令 */
 
 .text
 .globl kernel_thread_entry

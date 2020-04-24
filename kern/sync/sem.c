@@ -1,3 +1,5 @@
+// 信号量的方法实现
+
 #include <defs.h>
 #include <wait.h>
 #include <atomic.h>
@@ -7,14 +9,17 @@
 #include <sync.h>
 #include <assert.h>
 
+// 信号量初始化
 void
 sem_init(semaphore_t *sem, int value) {
     sem->value = value;
     wait_queue_init(&(sem->wait_queue));
 }
 
+// 信号量++
 static __noinline void __up(semaphore_t *sem, uint32_t wait_state) {
     bool intr_flag;
+    // 保存中断帧
     local_intr_save(intr_flag);
     {
         wait_t *wait;
@@ -26,9 +31,11 @@ static __noinline void __up(semaphore_t *sem, uint32_t wait_state) {
             wakeup_wait(&(sem->wait_queue), wait, wait_state, 1);
         }
     }
+    // 恢复中断帧
     local_intr_restore(intr_flag);
 }
 
+// 信号量--
 static __noinline uint32_t __down(semaphore_t *sem, uint32_t wait_state) {
     bool intr_flag;
     local_intr_save(intr_flag);

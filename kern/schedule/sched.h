@@ -1,3 +1,5 @@
+// 定义了调度器、计时器与进程队列的数据结构与相关内联函数
+
 #ifndef __KERN_SCHEDULE_SCHED_H__
 #define __KERN_SCHEDULE_SCHED_H__
 
