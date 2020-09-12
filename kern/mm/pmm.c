@@ -110,13 +110,16 @@ page_init(void) {
   kprintf("]\n\n");
 
   maxpa = KERNTOP;
+
+  // 内核空间所需要的物理页的数量
   npage = KMEMSIZE >> PGSHIFT;
 
  // end address of kernel
   extern char end[];
+
+  // 物理页表结构置于内核空间的末尾并将表中的所有Page结构体初始化
   // put page structure table at the end of kernel
   pages = (struct Page *)ROUNDUP_2N((void *)end, PGSHIFT); 
-
   for(i=0; i < npage; i++){
     SetPageReserved(pages + i);
   }
@@ -184,7 +187,7 @@ pmm_init(void) {
     // then use pmm->init_memmap to create free page list
     page_init();
 
-    //use pmm->check to verify the correctness of the alloc/free function in a pmm
+    // use pmm->check to verify the correctness of the alloc/free function in a pmm
     check_alloc_page();
     
     // create boot_pgdir, an initial page directory(Page Directory Table, PDT)
