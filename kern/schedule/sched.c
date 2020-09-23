@@ -77,7 +77,7 @@ sched_init(void) {
 
     sched_class = &default_sched_class;
 
-    rq = &__rq; // 这是干嘛
+    rq = &__rq;
     rq->max_time_slice = 20;
     sched_class->init(rq);
 

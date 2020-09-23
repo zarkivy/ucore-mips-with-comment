@@ -200,8 +200,8 @@ pmm_init(void) {
 
     enable_paging();
 
-    //now the basic virtual memory map(see memalyout.h) is established.
-    //check the correctness of the basic virtual memory map.
+    // now the basic virtual memory map(see memalyout.h) is established.
+    // check the correctness of the basic virtual memory map.
     check_boot_pgdir();
 
     memset(boot_pgdir, 0, PGSIZE);

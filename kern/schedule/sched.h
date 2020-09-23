@@ -58,9 +58,9 @@ struct sched_class {
 
 // 名字叫队列，其实只是一个列表，两个列表的属性集合在一起而已
 struct run_queue {
-    list_entry_t run_list;
-    unsigned int proc_num;
-    int max_time_slice;
+    list_entry_t run_list;  // 双向列表
+    unsigned int proc_num;  // 列表中进程数
+    int max_time_slice;     // 最大事件片
 };
 
 void sched_init(void);

@@ -93,7 +93,7 @@ void forkrets(struct trapframe *tf);
 // 同上，函数体在switch.S。大意是保存from进程上下文的寄存器，恢复to的寄存器
 void switch_to(struct context *from, struct context *to);
 
-// 创建进程结构体，并初始化（大部分赋值位NULL/0，列表则用专门的初始化函数初始化，最特殊的是cr3（MIPS也有cr3？）和pid）
+// 创建进程结构体，并初始化（大部分赋值位NULL/0，列表则用专门的初始化函数初始化，最特殊的是cr3（MIPS为模拟出的cr3）和pid）
 // alloc_proc - alloc a proc_struct and init all fields of proc_struct
 static struct proc_struct *
 alloc_proc(void) {
@@ -1000,7 +1000,6 @@ const char *argv[] = {path, ##__VA_ARGS__, NULL};       \
 
 #define KERNEL_EXECVE3(x, s, ...)               __KERNEL_EXECVE3(x, s, ##__VA_ARGS__)
 
-// 给下面的init_main创建进程的函数
 // user_main - kernel thread used to exec a user program
 static int
 user_main(void *arg) {
@@ -1041,7 +1040,7 @@ init_main(void *arg) {
     return 0;
 }
 
-// 初始化proc_list、hash_list。创建第一个内核线程idleproc，然后在创建其子进程initproc
+// 初始化proc_list、hash_list。创建第一个内核线程idleproc，然后再创建其子进程initproc
 // proc_init - set up the first kernel thread idleproc "idle" by itself and 
 //           - create the second kernel thread init_main
 void

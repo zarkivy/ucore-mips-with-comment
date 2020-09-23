@@ -25,7 +25,7 @@ void setup_exception_vector()
 void __noreturn
 kern_init(void) {
     //setup_exception_vector();
-    tlb_invalidate_all();
+    tlb_invalidate_all();       // 关闭 tlb
   	kprintf("tlb invalidated\n");
 
     pic_init();                 // init interrupt controller
