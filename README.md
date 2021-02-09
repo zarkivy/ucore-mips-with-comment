@@ -1,13 +1,11 @@
 # ucore-mips-with-comment
 
 ### Intro
-基于 uCore 的 MIPS 版本，手动添加注释
-基于 2020 年 4 月份的 uCore 源码完成
-龙芯杯 2020 已结束，此仓库仅供参考，不建议直接编译
-既因为在添加注释的过程中不排除改坏了代码
-又因为 uCore 也在不断更新中，建议编译最新版 uCore
-uCore 仓库地址：[https://github.com/chyyuu/ucore_os_plus](https://github.com/chyyuu/ucore_os_plus)
-清华大学龙芯杯参赛使用的 uCore for MIPS ：[https://github.com/chyh1990/ucore-thumips](https://github.com/chyh1990/ucore-thumips)
+- 基于 uCore 的 MIPS 版本，手动添加注释
+- 基于 2020 年 4 月份的 uCore 源码完成
+- 龙芯杯 2020 已结束，此仓库仅供参考阅读，不建议直接编译。既因为在添加注释的过程中不排除改坏了代码,又因为 uCore 也在不断更新中，建议编译最新版 uCore
+- uCore 仓库地址：[https://github.com/chyyuu/ucore_os_plus](https://github.com/chyyuu/ucore_os_plus)
+- 清华大学龙芯杯参赛使用的 uCore for MIPS ：[https://github.com/chyh1990/ucore-thumips](https://github.com/chyh1990/ucore-thumips)
 
 ### Usage
 
